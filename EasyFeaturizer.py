@@ -1,36 +1,70 @@
 from os import listdir
-import os.path # isfile, join
+import os # isfile, join
 
 class EasyFeaturizer:
     def __init__ (self, verbose=True):
         self.verbose=True
-
+        self.strfalse=['false', '0', 'f', 'n', 'no', 'nope', 'certainly not']
     #Read in Annual and Quarterly Financial Statements data
-    def featurize_AQFS(self,config_file):
-        #parse args
-        args=self.parse_config(config_file)
+    def featurize_AQFS(self,config_files):
+        for config_file in config_files:
+            #parse args
+            args=self.parse_config(config_file)
 
-        data=self.read_from_flatfiles(args)
+            data=self.read_from_flatfiles(args)
 
     def read_from_flatfiles(self,args):
         #initialize variables from args
         header=False
         if 'header' in args:
             header=True
+            if args['header'].lower() in self.strfalse:
+                header=False
+
+        #gather all files into files list
+        paths=[]
         path=''
+        files=[]
         if 'path' in args:
             path=args['path'][0]
-        files=[]
+        if 'paths' in args:
+            paths=args['paths']
+        if 'root' in args:
+            paths=[x[0] for x in os.walk(root)]
         if 'files' in args:
             files=[os.path.join(path,f) for f in args['files']]
             files=[ f for f in files if os.path.isfile(f)]
             if len(files)==0:
                 raise Exception ("No files found. Check filenames.")
         else:
-            files = [ f for f in listdir(path) if os.path.isfile(os.path.join(path,f)) ]
+            if self.verbose:
+                print 'gathering files'
+            if 'filename' in args:
+                filename=args['filename'][0]
+                for path in paths:
+                    files.extend( [ os.path.join(path,f) for f in listdir(path) if f == filename ])
+            elif 'fileprefix' in args:
+                prefix=tuple(args['fileprefix'])
+                for path in paths:
+                    files.extend( [ os.path.join(path,f) for f in listdir(path) if f.startswith(prefix)])
+            elif 'filesuffix' in args:
+                suffix=tuple(args['filesuffix'])
+                for path in paths:
+                    files.extend( [ os.path.join(path,f) for f in listdir(path) if f.endswith(suffix)])
+            else:
+                for path in paths:
+                    files.extend( [ os.path.join(path,f) for f in listdir(path)])
+
+            files=[ f for f in files if os.path.isfile(f)]
             if len(files)==0:
-                raise Exception ("No files specified and path is empty")
-    
+                raise Exception ("No files could be found")
+        if self.verbose:
+            print 'the following files will be parsed:'
+            for f in files:
+                print f 
+        
+        #all files to be parsed should now be in files
+
         
 
     def parse_config(self,filepath):
