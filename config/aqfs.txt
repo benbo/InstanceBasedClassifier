@@ -1,0 +1,5 @@
+header=True
+#you can add comments like this
+path=/home/user/Downloads/
+#files=2015q1,2015#if files aren't specified, all files in path are used
+fields=
