@@ -1,26 +1,33 @@
 from os import listdir
 import os # isfile, join
+import numpy as np
 
 class EasyFeaturizer:
     def __init__ (self, verbose=True):
         self.verbose=True
         self.strfalse=['false', '0', 'f', 'n', 'no', 'nope', 'certainly not']
+        #TODO store data in a database
+        self.datastore={}
+
+
+    def add_to_datastore(self,name,data):
+        self.datastore[name]=data
+
     #Read in Annual and Quarterly Financial Statements data
     def featurize_AQFS(self,config_files):
+        datastore={}
         for config_file in config_files:
             #parse args
             args=self.parse_config(config_file)
 
             data=self.read_from_flatfiles(args)
+            name=config_file.split('.')[0].split('/')[-1]
+            if 'name' in args:
+                name=args['name']
+            self.add_to_datastore(name,data)
+        print 'done extracting data'
 
     def read_from_flatfiles(self,args):
-        #initialize variables from args
-        header=False
-        if 'header' in args:
-            header=True
-            if args['header'].lower() in self.strfalse:
-                header=False
-
         #gather all files into files list
         paths=[]
         path=''
@@ -62,18 +69,60 @@ class EasyFeaturizer:
             print 'the following files will be parsed:'
             for f in files:
                 print f 
-        
-        #all files to be parsed should now be in files
+        if 'csv' in args:
+            self.read_csv(files,args)
+        else:#custom
+            self.read_flat_custom(files,args)
+            #all files to be parsed should now be in files
 
-        
+    def read_csv(self,files,args):
+        skip_head=0
+        if 'header' in args:
+            skip_head=1
+            if args['header'] != '':
+                try:
+                    skip_head=int(args['header'])
+                except:
+                    skip_head=1
+        delim=','
+        if 'delimeter' in args:
+            delim=args['delimeter']
+        if 'columns' in args:
+            columns=(int(a) for a in args.['columns'])
+        #read
+        data = np.genfromtxt(csvfile,skip_header=skip_head, delimiter=delim, dtype=None,usecols=columns)
+        #TODO apply filters
+        return data 
 
+    def read_flat_custom(self,files,args):
+        skip_head=0
+        if 'header' in args:
+            skip_head=1
+            if args['header'] != '':
+                try:
+                    skip_head=int(args['header'])
+                except:
+                    skip_head=1
+        delimeter=','
+        if 'delimeter' in args:
+            delimeter=args['delimeter']
+        for fname in files:
+            with open(fname,'r') as f:
+                if skip_head>0:
+                    for line in xrange(skip_head):
+                        next(f)
+                for line in f:
+                    #dosomething
+                    line=line
+                    #TODO custom read lines
+                    #TODO apply filters
     def parse_config(self,filepath):
         args_dict={}
         with open(filepath,'r') as f:
             for line in f:
-                text=line.split('#')#everything after # is comment so config string is in [0]
+                text=line.rstrip().split('#')#everything after # is comment so config string is in [0]
                 fields = text[0].split('=')
-                if len(fields) > 0:
+                if len(fields) > 1:
                     args_dict[fields[0]]=fields[1].split(',')
                 else:
                     args_dict[fields[0]]=''
