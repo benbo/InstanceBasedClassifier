@@ -66,8 +66,8 @@ class InstanceBasedClassifier:
         #UCRDTW
         z=np.zeros(self.n)
         for c,col in enumerate(example):
-            x=example[col].values
-            z_c=np.array([ucrdtw(df[col].values, x, 0.20, False)[1] for key, df in self.test_data.iteritems()])
+            x=example[col].values[::-1]
+            z_c=np.array([ucrdtw(df[col].values[::-1], x, 0.20, False)[1] for key, df in self.test_data.iteritems()])
             #print col
             #print z_c
             z=z+self.w[c]*z_c
