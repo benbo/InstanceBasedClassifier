@@ -32,18 +32,19 @@ class InstanceBasedClassifier:
         examples=['COLV','RNBI']
         self.labels={key:1.0 for key in examples}#-1.0 for negatives
         #tickdata=self.load_all_ticks(directory='data/small/',remove_cols=[0,2])
-        tickdata=self.load_all_ticks(directory='data/securities/',remove_cols=[0,2])
+        #tickdata=self.load_all_ticks(directory='data/securities/',remove_cols=[0,2])
+        tickdata=self.load_all_ticks(directory='data/just3/',remove_cols=[0,2])
         tickdata=self.clean_ticks_naive(tickdata)
         #do more preprocessing? Some linear amplitude scaling?        
         if self.normalize:
             tickdata={key:self.normalize_df(tickdata[key]) for key in tickdata }
-        self.symbols=tickdata.keys()
+        
         lengths=np.array([len(tickdata[m]) for m in tickdata])
 
         self.example_data={f:tickdata[f] for f in examples}
         #column_names=self.example_data[examples[0]].columns
         self.test_data={f:tickdata[f] for f in tickdata if f not in self.example_data}
-        
+        self.symbols=self.test_data.keys()
 
         #initialize hyper parameters
         median_length=np.median(lengths)
