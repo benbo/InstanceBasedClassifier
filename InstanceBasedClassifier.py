@@ -7,9 +7,9 @@ import global_align as ga
 #ucr dtw
 from  _ucrdtw import ucrdtw
 #R dtw
-import rpy2.robjects.numpy2ri
-from rpy2.robjects.packages import importr
-rpy2.robjects.numpy2ri.activate()
+#import rpy2.robjects.numpy2ri
+#from rpy2.robjects.packages import importr
+#rpy2.robjects.numpy2ri.activate()
 
 class InstanceBasedClassifier:
 
@@ -19,7 +19,6 @@ class InstanceBasedClassifier:
         self.w=None
         self.normalize=False
         self.header=None
-        self.tickdata=None
         self.symbols=None
         self.scores=None
         self.ranking=None
@@ -27,19 +26,31 @@ class InstanceBasedClassifier:
         self.test_data=None
         self.labels=None
         
-
-    def generate_scores(self):
+    #load fingerprints and test data
+    #set labels for examples
+    def load_data(self)
         examples=['COLV','RNBI']
+        #data_info=('dtw','txt')
+        data_info=('dtw')
         self.labels={key:1.0 for key in examples}#-1.0 for negatives
+        
         #tickdata=self.load_all_ticks(directory='data/small/',remove_cols=[0,2])
         #tickdata=self.load_all_ticks(directory='data/securities/',remove_cols=[0,2])
         tickdata=self.load_all_ticks(directory='data/just3/',remove_cols=[0,2])
         tickdata=self.clean_ticks_naive(tickdata)
-        #do more preprocessing? Some linear amplitude scaling?        
-        if self.normalize:
-            tickdata={key:self.normalize_df(tickdata[key]) for key in tickdata }
         
-        lengths=np.array([len(tickdata[m]) for m in tickdata])
+        
+        return example_data,test_data
+        
+    def generate_scores(self):
+        
+        self.load_data()
+
+        
+        #do more preprocessing? Some linear amplitude scaling?        
+        #if self.normalize: UCRDTW already does z-axis normalization
+        #    tickdata={key:self.normalize_df(tickdata[key]) for key in tickdata }
+        
 
         self.example_data={f:tickdata[f] for f in examples}
         #column_names=self.example_data[examples[0]].columns
@@ -47,9 +58,7 @@ class InstanceBasedClassifier:
         self.symbols=self.test_data.keys()
 
         #initialize hyper parameters
-        median_length=np.median(lengths)
-        example_lengths=np.array([len(self.example_data[m]) for m in self.example_data])
-        self.n=len(self.test_data.keys())
+        self.n=len(self.symbols)
         num_columns=len(self.example_data[examples[0]].keys())
         self.w=np.array([1.0/num_columns]*num_columns)
         self.f=np.zeros(self.n)
